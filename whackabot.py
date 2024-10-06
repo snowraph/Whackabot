@@ -57,6 +57,7 @@ class Whackabot:
         parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='Logfile (defaut: stdin)')
         parser.add_argument('-f', '--format', default='vcombined', help='Log format (default: vcombined)')
         parser.add_argument('--list-formats', action='store_true', help='List available log formats')
+        parser.add_argument('-c', '--count', type=int, default=10, help='Get top N results for hosts, user-agents and requests modes (default: 10)')
         parser.add_argument('-t', '--timestamps', action='store_true', help='Show timestamps (first/last) for hosts, user-agents and requests modes')
         parser.add_argument('-x', '--output-extended', action='store_true', default=False, help="Show detailed view for user-agents and requests modes")
         parser.add_argument('--no-progress', action='store_true', help='Hide progress status')
@@ -65,17 +66,16 @@ class Whackabot:
         parser.add_argument('-V', '--version', action='version', version=f"%(prog)s {__class__.__version__}", help='Get program version')
 
         hmode = parser.add_argument_group("Hosts mode (default)")
-        hmode.add_argument('-c', '--count', type=int, default=10, help='Get top N results (default: 10)')
         hmode.add_argument('-r', '--reverse-lookup', action='store_true', default=False, help="Try to resolve IP addresses (slow)")
         hmode.add_argument('-w', '--whois-lookup', action='store_true', default=False, help="Get IP info from Whois (unreliable)")
         hmode.add_argument('-u', '--show-user-agents', nargs='?', type=int, const=10, default=None, metavar='COUNT', help='Show top N (default: 10) user-agents per host')
         hmode.add_argument('-p', '--network-prefix', type=int, default=None, metavar='PREFIX', help='Network prefix in CIDR notation (eg. "24" for x.x.x.x/24), to narrow down subnets. Caution: prefixing both IPv4 and IPv6 makes no sense')
 
         umode = parser.add_argument_group('User agents mode', 'Show top user agents')
-        umode.add_argument('-a', '--user-agents', nargs='?', type=int, const=10, default=None, metavar='COUNT', help="User agents mode (default: 10)")
+        umode.add_argument('-a', '--user-agents', action='store_true', default=False, help="User agents mode")
 
         rmode = parser.add_argument_group('Requests mode', 'Show top requests')
-        rmode.add_argument('-q', '--requests', nargs='?', type=int, const=10, default=None, metavar='COUNT', help="Requests mode (default: 10)")
+        rmode.add_argument('-q', '--requests', action='store_true', default=False, help="Requests mode")
         rmode.add_argument('-s', '--requests-ignore-static', action='store_true', default=False, help="Ignore static resources")
         rmode.add_argument('-m', '--requests-remove-query-string', action='store_true', default=False, help="Remove query string")
         rmode.add_argument('-z', '--requests-dont-anonymize-parameters', action='store_true', default=False, help="Don't anonymize query string parameters")
@@ -112,10 +112,10 @@ class Whackabot:
             self.logger.info(f"Showing time distribution with interval {self.config('td_mode')}m (total hits: {self.hits})")
             self.format_output_times()
         elif self.config('ua_mode'):
-            self.logger.info(f"Showing top {self.config('ua_mode')} of {len(self._uas)} user-agents (total hits: {self.hits})")
+            self.logger.info(f"Showing top {self.config('limit')} of {len(self._uas)} user-agents (total hits: {self.hits})")
             self.format_output_uas()
         elif self.config('req_mode'):
-            self.logger.info(f"Showing top {self.config('req_mode')} of {len(self._reqs)} requests (total hits: {self.hits})")
+            self.logger.info(f"Showing top {self.config('limit')} of {len(self._reqs)} requests (total hits: {self.hits})")
             self.format_output_reqs()
         else:
             self.logger.info(f"Showing top {self.config('limit')} of {len(self._hosts)} hosts (total hits: {self.hits})")
@@ -456,7 +456,7 @@ class Whackabot:
             self.inc_dict_property(u['statuses'], parts['status'])
 
     def format_output_uas(self):
-        uas = dict(sorted(self._uas.items(), key=lambda item: item[1]['count'], reverse=True)[0:self.config('ua_mode')])
+        uas = dict(sorted(self._uas.items(), key=lambda item: item[1]['count'], reverse=True)[0:self.config('limit')])
 
         header = ['Hits']
         if self.config('output_ext'):
@@ -562,7 +562,7 @@ class Whackabot:
             self.inc_dict_property(r['statuses'], parts['status'])
 
     def format_output_reqs(self):
-        reqs = dict(sorted(self._reqs.items(), key=lambda item: item[1]['count'], reverse=True)[0:self.config('req_mode')])
+        reqs = dict(sorted(self._reqs.items(), key=lambda item: item[1]['count'], reverse=True)[0:self.config('limit')])
 
         header = ['Hits']
         if self.config('output_ext'):
