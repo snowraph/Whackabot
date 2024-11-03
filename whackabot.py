@@ -189,7 +189,7 @@ class Whackabot:
         parts = self._split_line(line)
         
         # minimal validation: ip of first row
-        if self.hits == 0 and not self.valid_ip(parts[self.format['ip']]):
+        if self.hits == 1 and not self.valid_ip(parts[self.format['ip']]):
             self.logger.critical(f'"{parts[self.format["ip"]]}" is not a valid IP address, please verify log format')
             exit(1)
 
