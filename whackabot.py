@@ -12,6 +12,7 @@ import logging
 import argparse
 import ipaddress
 import threading
+import re
 from time import perf_counter, sleep
 from datetime import datetime, timedelta
 from socket import gethostbyaddr
@@ -57,7 +58,7 @@ class Whackabot:
         parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='Logfile (defaut: stdin)')
         parser.add_argument('-f', '--format', default='vcombined', help='Log format (default: vcombined)')
         parser.add_argument('--list-formats', action='store_true', help='List available log formats')
-        parser.add_argument('-c', '--count', type=int, default=10, help='Get top N results for hosts, user-agents and requests modes (default: 10)')
+        parser.add_argument('-c', '--count', type=int, default=10, help='Get top COUNT results for hosts, user-agents and requests modes (default: 10). Format "-COUNT" is also accepted.')
         parser.add_argument('-t', '--timestamps', action='store_true', help='Show timestamps (first/last) for hosts, user-agents and requests modes')
         parser.add_argument('-x', '--output-extended', action='store_true', default=False, help="Show detailed view for user-agents and requests modes")
         parser.add_argument('--no-progress', action='store_true', help='Hide progress status')
@@ -83,7 +84,13 @@ class Whackabot:
         tmode = parser.add_argument_group('Time distribution mode', 'Show hits by time interval')
         tmode.add_argument('-d', '--time-distribution', nargs='?', type=int, const=1, default=None, metavar='interval', help="Time distribution mode (default interval: 1 minute)")
 
-        return parser.parse_args()
+        # handle option "-c X" as "-X" like tail or head
+        args = sys.argv[1:]
+        for i, a in enumerate(args):
+            if m := re.fullmatch('-([0-9]+)', a):
+                args[i] = '-c' + m.group(1)
+
+        return parser.parse_args(args)
 
     def run(self):
         start_time = perf_counter()
@@ -248,7 +255,6 @@ class Whackabot:
     @staticmethod
     def _resolve_whois(ip):
         import subprocess
-        import re
         h, n, c = '-', None, None
         with subprocess.Popen(['whois', ip], stdout=subprocess.PIPE) as proc:
             while line := proc.stdout.readline().decode('utf-8'):
