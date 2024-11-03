@@ -54,15 +54,15 @@ class Whackabot:
 
     @staticmethod
     def arg_parse():
-        parser = argparse.ArgumentParser(prog='whack', description='Find top traffic sources in Apache/Nginx access logs.')
+        parser = argparse.ArgumentParser(description='Find top traffic sources in Apache/Nginx access logs.')
         parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='Logfile (defaut: stdin)')
-        parser.add_argument('-f', '--format', default='vcombined', help='Log format (default: vcombined)')
-        parser.add_argument('--list-formats', action='store_true', help='List available log formats')
+        parser.add_argument('-f', '--format', default='vcombined', choices=[*__class__.formats], help='Log format (default: vcombined)')
+        parser.add_argument(      '--list-formats', action='store_true', help='List available log formats')
         parser.add_argument('-c', '--count', type=int, default=10, help='Get top COUNT results for hosts, user-agents and requests modes (default: 10). Format "-COUNT" is also accepted.')
         parser.add_argument('-t', '--timestamps', action='store_true', help='Show timestamps (first/last) for hosts, user-agents and requests modes')
         parser.add_argument('-x', '--output-extended', action='store_true', default=False, help="Show detailed view for user-agents and requests modes")
-        parser.add_argument('--no-progress', action='store_true', help='Hide progress status')
-        parser.add_argument('--no-color', action='store_true', help="Don't color output")
+        parser.add_argument(      '--no-progress', action='store_true', help='Hide progress status')
+        parser.add_argument(      '--no-color', action='store_true', help="Don't color output")
         parser.add_argument('-v', '--verbose', action='count', default=0, help='Increase verbosity')
         parser.add_argument('-V', '--version', action='version', version=f"%(prog)s {__class__.__version__}", help='Get program version')
 
