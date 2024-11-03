@@ -69,6 +69,7 @@ class Whackabot:
         hmode = parser.add_argument_group("Hosts mode (default)")
         hmode.add_argument('-r', '--reverse-lookup', action='store_true', default=False, help="Try to resolve IP addresses (slow)")
         hmode.add_argument('-w', '--whois-lookup', action='store_true', default=False, help="Get IP info from Whois (unreliable)")
+        hmode.add_argument('-i', '--ipinfo', action='store_true', default=False, help="Get IP info from ipinfo.io (fast and accurate, read API token from env: export IPINFO_TOKEN=...)")
         hmode.add_argument('-u', '--show-user-agents', nargs='?', type=int, const=10, default=None, metavar='COUNT', help='Show top N (default: 10) user-agents per host')
         hmode.add_argument('-p', '--network-prefix', type=int, default=None, metavar='PREFIX', help='Network prefix in CIDR notation (eg. "24" for x.x.x.x/24), to narrow down subnets. Caution: prefixing both IPv4 and IPv6 makes no sense')
 
@@ -242,6 +243,8 @@ class Whackabot:
                     ip = ip.split('/')[0]
                 if self.config('whois'):
                     h = self._resolve_whois(ip)
+                elif self.config('ipinfo'):
+                    h = self._resolve_ipinfo(ip)
                 else:
                     h = self._resolve_native(ip)
             except:
@@ -265,6 +268,30 @@ class Whackabot:
                         c = m.group(2).upper()[:2]
         if n and c:
             h = f"{c}/{n}"
+        return h
+
+    def _resolve_ipinfo(self, ip):
+        from urllib.request import urlopen
+        from json import loads
+        from os import getenv
+
+        h = '-'
+        url = 'http://ipinfo.io/' + ip
+        if t := getenv('IPINFO_TOKEN'):
+            url += '?token=' + t
+
+        try:
+            res = loads(urlopen(url).read().decode('utf-8'))
+        except Exception as e:
+            self.logger.warning(f'ipinfo: {e}')
+
+        if res:
+            n = (res['hostname'] if 'hostname' in res
+                else res['org'] if 'org' in res
+                else res['region'] if 'region' in res
+                else '?')
+            h = f"{res['country']}/{n}"
+
         return h
 
     @staticmethod
@@ -619,8 +646,9 @@ if __name__ == '__main__':
         'log_format': args.format,
         'show_user_agents': args.show_user_agents,
         'show_timestamps': args.timestamps,
-        'resolve': args.reverse_lookup or args.whois_lookup,
+        'resolve': args.reverse_lookup or args.whois_lookup or args.ipinfo,
         'whois': args.whois_lookup,
+        'ipinfo': args.ipinfo,
         'prefix': args.network_prefix,
         'td_mode': args.time_distribution,#TODO: control > 0
         'ua_mode': args.user_agents,
