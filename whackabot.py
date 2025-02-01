@@ -13,6 +13,7 @@ import argparse
 import ipaddress
 import threading
 import re
+from os import getenv
 from time import perf_counter, sleep
 from datetime import datetime, timedelta
 from socket import gethostbyaddr
@@ -48,6 +49,11 @@ class Whackabot:
         self._reqs = {}
         self.hits = 0
         self.format = self.formats[self.config('log_format')]
+
+        if self.config('ipinfo'):
+            self._config['ipinfo_token'] = getenv('IPINFO_TOKEN')
+            if not self._config['ipinfo_token']:
+                self.logger.warning('IPinfo token not found')
 
     def config(self, name):
         return self._config[name] if name in self._config else None
@@ -247,8 +253,8 @@ class Whackabot:
                     h = self._resolve_ipinfo(ip)
                 else:
                     h = self._resolve_native(ip)
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning(e)
         return h
 
     @staticmethod
@@ -273,17 +279,16 @@ class Whackabot:
     def _resolve_ipinfo(self, ip):
         from urllib.request import urlopen
         from json import loads
-        from os import getenv
 
         h = '-'
         url = 'http://ipinfo.io/' + ip
-        if t := getenv('IPINFO_TOKEN'):
-            url += '?token=' + t
+        if self.config('ipinfo_token'):
+            url += '?token=' + config('ipinfo_token')
 
         try:
             res = loads(urlopen(url).read().decode('utf-8'))
         except Exception as e:
-            self.logger.warning(f'ipinfo: {e}')
+            raise Exception(f'IPinfo: {e}')
 
         if res:
             n = (res['hostname'] if 'hostname' in res
