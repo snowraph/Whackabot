@@ -90,6 +90,7 @@ class Whackabot:
 
         tmode = parser.add_argument_group('Time distribution mode', 'Show hits by time interval')
         tmode.add_argument('-d', '--time-distribution', nargs='?', type=int, const=1, default=None, metavar='interval', help="Time distribution mode (default interval: 1 minute)")
+        tmode.add_argument(      '--td-sort-top', nargs='?', type=int, const=10, default=False, metavar='COUNT', help='Sort by top intervals, display N (default: 10) results')
 
         # handle option "-c X" as "-X" like tail or head
         args = sys.argv[1:]
@@ -548,7 +549,12 @@ class Whackabot:
         self.inc_dict_property(self._times, t)
 
     def format_output_times(self):
-        # TODO: sort by max
+        if not len(self._times):
+            return False
+
+        if self.config('td_sort_top'):
+            self._times = dict(sorted(self._times.items(), key=lambda item: item[1], reverse=True)[0:self.config('td_sort_top')])
+
         m = max(self._times.values())
         mw = len(str(m))
         # say we want a graph of width x
@@ -656,6 +662,7 @@ if __name__ == '__main__':
         'ipinfo': args.ipinfo,
         'prefix': args.network_prefix,
         'td_mode': args.time_distribution,#TODO: control > 0
+        'td_sort_top': args.td_sort_top,
         'ua_mode': args.user_agents,
         'output_ext': args.output_extended,
         'req_mode': args.requests,
