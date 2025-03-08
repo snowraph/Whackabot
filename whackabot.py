@@ -4,7 +4,7 @@
 """
 A script to parse and analyze webserver access logs.
 Find abusers easily.
-https://github.com/snowraph
+https://github.com/snowraph/Whackabot
 """
 
 import sys
