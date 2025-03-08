@@ -283,7 +283,7 @@ class Whackabot:
         h = '-'
         url = 'http://ipinfo.io/' + ip
         if self.config('ipinfo_token'):
-            url += '?token=' + config('ipinfo_token')
+            url += '?token=' + self.config('ipinfo_token')
 
         try:
             res = loads(urlopen(url).read().decode('utf-8'))
