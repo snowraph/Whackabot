@@ -64,7 +64,7 @@ class Whackabot:
         parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='Logfile (defaut: stdin)')
         parser.add_argument('-f', '--format', default='vcombined', choices=[*__class__.formats], help='Log format (default: vcombined)')
         parser.add_argument(      '--list-formats', action='store_true', help='List available log formats')
-        parser.add_argument('-c', '--count', type=int, default=10, help='Get top COUNT results for hosts, user-agents and requests modes (default: 10). Format "-COUNT" is also accepted.')
+        parser.add_argument('-c', '--count', type=int, default=10, help='Get top COUNT results when applicable (default: 10). Format "-COUNT" is also accepted.')
         parser.add_argument('-t', '--timestamps', action='store_true', help='Show timestamps (first/last) for hosts, user-agents and requests modes')
         parser.add_argument('-x', '--output-extended', action='store_true', default=False, help="Show detailed view for user-agents and requests modes")
         parser.add_argument(      '--no-progress', action='store_true', help='Hide progress status')
@@ -90,7 +90,7 @@ class Whackabot:
 
         tmode = parser.add_argument_group('Time distribution mode', 'Show hits by time interval')
         tmode.add_argument('-d', '--time-distribution', nargs='?', type=int, const=1, default=None, metavar='interval', help="Time distribution mode (default interval: 1 minute)")
-        tmode.add_argument(      '--td-sort-top', nargs='?', type=int, const=10, default=False, metavar='COUNT', help='Sort by top intervals, display N (default: 10) results')
+        tmode.add_argument(      '--td-sort-top', action='store_true', default=False, help='Sort by top intervals, display COUNT (default: 10) results')
 
         # handle option "-c X" as "-X" like tail or head
         args = sys.argv[1:]
@@ -553,7 +553,7 @@ class Whackabot:
             return False
 
         if self.config('td_sort_top'):
-            self._times = dict(sorted(self._times.items(), key=lambda item: item[1], reverse=True)[0:self.config('td_sort_top')])
+            self._times = dict(sorted(self._times.items(), key=lambda item: item[1], reverse=True)[0:self.config('limit')])
 
         m = max(self._times.values())
         mw = len(str(m))

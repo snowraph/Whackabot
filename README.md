@@ -145,8 +145,7 @@ Time distribution mode:
 
   -d [interval], --time-distribution [interval]
                         Time distribution mode (default interval: 1 minute)
-  --td-sort-top [COUNT]
-                        Sort by top intervals, display N (default: 10) results
+  --td-sort-top         Sort by top intervals, display COUNT (default: 10) results
 ```
 
 ## Contributing
