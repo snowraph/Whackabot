@@ -346,8 +346,13 @@ class Whackabot:
 
     def format_output(self):
         header = ['Host', 'Reverse', 'Hits', 'H/s', 'Bytes', 'UA', 'G/P/H/o', '2/3/4/5/oxx']
+
+        if self.config('prefix'):
+            header.insert(6, 'IP')
+
         if self.config('show_timestamps'):
             header += ['First', 'Last']
+
         top_hosts = self.get_top_hosts()
         res = []
         res.append(header)
@@ -367,8 +372,12 @@ class Whackabot:
                 self.format_statuses(host['statuses'])
             ]
 
+            if self.config('prefix'):
+                row.insert(6, len(host['ips']))
+
             if self.config('show_timestamps'):
                 row += [str(start), str(end)]
+
             res.append(row)
 
         if self.config('resolve'):
@@ -459,6 +468,8 @@ class Whackabot:
                 'methods': {},
                 'statuses': {}
             }
+            if self.config('prefix'):
+                self._hosts[ip]['ips'] = []
 
         h = self._hosts[ip]
         h['count'] += 1
@@ -468,6 +479,9 @@ class Whackabot:
         self.inc_dict_property(h['uas'], parts['ua'])
         self.inc_dict_property(h['methods'], parts['method'])
         self.inc_dict_property(h['statuses'], parts['status'])
+        if self.config('prefix'):
+            if not parts['ip'] in h['ips']:
+                h['ips'].append(parts['ip'])
 
     ### User agents mode ###
     def add_ua(self, parts):

@@ -156,7 +156,6 @@ Please provide logs samples for debug.
 - handle more log formats (see https://goaccess.io/man#options)
 - resolve timeout
 - resolve cache
-- hosts mode: add IP count when using prefix
 - specify custom format from cmdline or config file
 - improve ipv6 support
 - sorting (hits, bytes, uas)
