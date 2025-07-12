@@ -56,7 +56,7 @@ class Whackabot:
                 self.logger.warning('IPinfo token not found')
 
     def config(self, name):
-        return self._config[name] if name in self._config else None
+        return self._config.get(name)
 
     @staticmethod
     def arg_parse():
@@ -119,24 +119,24 @@ class Whackabot:
                 func_add(self.get_parts(line))
         except KeyboardInterrupt:
             self.logger.error('Aborted by user')
-            exit(1)
+            sys.exit(1)
 
         self.stop_thread_progress = 1
 
         if self.config('td_mode'):
-            self.logger.info(f"Showing time distribution with interval {self.config('td_mode')}m (total hits: {self.hits})")
+            self.logger.info("Showing time distribution with interval %dm (total hits: %d)", self.config('td_mode'), self.hits)
             self.format_output_times()
         elif self.config('ua_mode'):
-            self.logger.info(f"Showing top {self.config('limit')} of {len(self._uas)} user-agents (total hits: {self.hits})")
+            self.logger.info("Showing top %d of %d user-agents (total hits: %d)", self.config('limit'), len(self._uas), self.hits)
             self.format_output_uas()
         elif self.config('req_mode'):
-            self.logger.info(f"Showing top {self.config('limit')} of {len(self._reqs)} requests (total hits: {self.hits})")
+            self.logger.info("Showing top %d of %d requests (total hits: %d)", self.config('limit'), len(self._reqs), self.hits)
             self.format_output_reqs()
         else:
-            self.logger.info(f"Showing top {self.config('limit')} of {len(self._hosts)} hosts (total hits: {self.hits})")
+            self.logger.info("Showing top %d of %d hosts (total hits: %d)", self.config('limit'), len(self._hosts), self.hits)
             self.format_output()
 
-        self.logger.debug('Execution time: %ss' % round(perf_counter() - start_time, 4))
+        self.logger.debug('Execution time: %ss', round(perf_counter() - start_time, 4))
 
     def _thread_progress(self):
         d = threading.local()
@@ -153,7 +153,7 @@ class Whackabot:
         print("Available log formats, Apache style:")
         for f in Whackabot.formats:
             print(f'- {f}: {Whackabot.formats[f]["_spec"]}')
-        exit()
+        sys.exit()
 
     @staticmethod
     def _split_line(line):
@@ -194,11 +194,11 @@ class Whackabot:
             - performance
         """
         parts = self._split_line(line)
-        
+
         # minimal validation: ip of first row
         if self.hits == 1 and not self.valid_ip(parts[self.format['ip']]):
-            self.logger.critical(f'"{parts[self.format["ip"]]}" is not a valid IP address, please verify log format')
-            exit(1)
+            self.logger.critical('"%s" is not a valid IP address, please verify log format', parts[self.format["ip"]])
+            sys.exit(1)
 
         try:
             res = {
@@ -217,9 +217,9 @@ class Whackabot:
                 if self.config('req_mode'):
                     res['req'] = ''
         except Exception as e:
-            self.logger.critical(f'Split error at line: {self.hits} ({e})')
+            self.logger.critical('Split error at line: %d (%s)', self.hits, e)
             self.logger.critical(line)
-            exit(1)
+            sys.exit(1)
 
         return res
 
@@ -228,7 +228,7 @@ class Whackabot:
         try:
             ipaddress.ip_address(ip)
             return True
-        except:
+        except ValueError:
             return False
 
     def sort_hosts(self, by='hits'):
@@ -268,7 +268,7 @@ class Whackabot:
         h, n, c = '-', None, None
         with subprocess.Popen(['whois', ip], stdout=subprocess.PIPE) as proc:
             while line := proc.stdout.readline().decode('utf-8'):
-                if m := re.search('^(netname|country):\s+(.*)$', line, re.IGNORECASE):
+                if m := re.search(r'^(netname|country):\s+(.*)$', line, re.IGNORECASE):
                     if m.group(1).lower() == 'netname':
                         n = m.group(2)
                     else:
@@ -336,7 +336,7 @@ class Whackabot:
             for i, field in enumerate(row):
                 l = len(str(field))
                 if len(lengths) < nfields:
-                   lengths.append(l)
+                    lengths.append(l)
                 elif lengths[i] < l and nfields > i+1:# last field dont need filling
                     lengths[i] = l
         row_format = ''
@@ -390,7 +390,7 @@ class Whackabot:
             start_time = perf_counter()
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(res)) as tpe:
                 tpe.map(_threaded_resolve, res[1:])# cant make a timeout to work :(
-            self.logger.debug('Reverse lookup took %ss' % round(perf_counter() - start_time, 4))
+            self.logger.debug('Reverse lookup took %ss', round(perf_counter() - start_time, 4))
 
         row_format = self.format_get_row_format(res)
         if self.config('color'):
@@ -459,7 +459,7 @@ class Whackabot:
         ip = parts['ip']
         if self.config('prefix'):
             ip = ipaddress.ip_network((ip, self.config('prefix')), False).exploded
-        if not ip in self._hosts:
+        if ip not in self._hosts:
             self._hosts[ip] = {
                 'count': 0,
                 'bytes': 0,
@@ -480,13 +480,13 @@ class Whackabot:
         self.inc_dict_property(h['methods'], parts['method'])
         self.inc_dict_property(h['statuses'], parts['status'])
         if self.config('prefix'):
-            if not parts['ip'] in h['ips']:
+            if parts['ip'] not in h['ips']:
                 h['ips'].append(parts['ip'])
 
     ### User agents mode ###
     def add_ua(self, parts):
         ua = parts['ua']
-        if not ua in self._uas:
+        if ua not in self._uas:
             self._uas[ua] = {
                 'count': 0
             }
@@ -601,7 +601,7 @@ class Whackabot:
             req = req._replace(query=urlencode(qs, doseq=True))
 
         req = urlunparse(req)
-        if not req in self._reqs:
+        if req not in self._reqs:
             self._reqs[req] = {
                 'count': 0
             }
