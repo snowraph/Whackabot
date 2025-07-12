@@ -566,16 +566,20 @@ class Whackabot:
         if not len(self._times):
             return False
 
+        hmax = max(self._times.values())
+        hmin = min(self._times.values())
+        havg = sum(self._times.values()) / len(self._times)
+        self.logger.info('min: %d / max: %d / avg: %d', hmin, hmax, havg)
+
         if self.config('td_sort_top'):
             self._times = dict(sorted(self._times.items(), key=lambda item: item[1], reverse=True)[0:self.config('limit')])
 
-        m = max(self._times.values())
-        mw = len(str(m))
+        mw = len(str(hmax))
         # say we want a graph of width x
         witdh = 40
         for t in self._times:
-            w = int(self._times[t] / m * witdh)
-            print(f"[{t}] {self._times[t]:>{mw}} {'*'*w}")
+            w = int(self._times[t] / hmax * witdh)
+            print(f"[{t}] {self._times[t]:>{mw}} {'.'*w}")
 
     ### Requests mode ###
     # TODO: 3x slower than hosts mode !?
